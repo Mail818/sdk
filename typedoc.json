@@ -1,0 +1,30 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "Mail818 SDK Documentation",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/test/**",
+    "**/tests/**",
+    "**/__tests__/**"
+  ],
+  "navigationLinks": {
+    "Mail818": "https://mail818.com",
+    "GitHub": "https://github.com/mail818/sdk"
+  },
+  "includeVersion": true,
+  "sidebarLinks": {
+    "Documentation": "https://mail818.com/docs",
+    "API Reference": "https://api.mail818.com/docs"
+  },
+  "hideGenerator": false,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "treatWarningsAsErrors": false,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

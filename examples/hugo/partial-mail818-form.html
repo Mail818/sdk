@@ -1,0 +1,475 @@
+{{/*
+  Mail818 Newsletter Form Partial
+  
+  Usage in templates:
+  {{ partial "mail818-form.html" (dict 
+    "apiKey" .Site.Params.mail818.apiKey
+    "projectId" .Site.Params.mail818.projectId
+    "title" "Join Our Newsletter"
+    "context" .
+  ) }}
+  
+  Or simpler with site config:
+  {{ partial "mail818-form.html" . }}
+  
+  Place this file in: layouts/partials/mail818-form.html
+*/}}
+
+{{- $apiKey := .apiKey | default .Site.Params.mail818.apiKey -}}
+{{- $projectId := .projectId | default .Site.Params.mail818.projectId -}}
+{{- $apiUrl := .apiUrl | default .Site.Params.mail818.apiUrl | default "https://api.mail818.com" -}}
+{{- $title := .title | default "Subscribe to Our Newsletter" -}}
+{{- $description := .description | default "Stay updated with our latest news and updates." -}}
+{{- $buttonText := .buttonText | default "Subscribe" -}}
+{{- $successMessage := .successMessage | default "Thank you for subscribing!" -}}
+{{- $showName := .showName | default true -}}
+{{- $showMessage := .showMessage | default false -}}
+{{- $theme := .theme | default "light" -}}
+{{- $compact := .compact | default false -}}
+{{- $formId := printf "mail818-%d" now.UnixNano -}}
+
+<div class="mail818-widget {{ if $compact }}mail818-compact{{ end }} mail818-theme-{{ $theme }}" data-form-id="{{ $formId }}">
+  <div class="mail818-content">
+    {{- if not $compact -}}
+      {{ with $title }}<h3 class="mail818-title">{{ . | safeHTML }}</h3>{{ end }}
+      {{ with $description }}<p class="mail818-description">{{ . | safeHTML }}</p>{{ end }}
+    {{- end -}}
+    
+    <div class="mail818-alerts">
+      <div class="mail818-alert mail818-alert-success" role="alert" aria-live="polite" style="display: none;">
+        <svg class="mail818-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        <span>{{ $successMessage }}</span>
+      </div>
+      
+      <div class="mail818-alert mail818-alert-error" role="alert" aria-live="assertive" style="display: none;">
+        <svg class="mail818-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <span class="mail818-error-message">Something went wrong. Please try again.</span>
+      </div>
+    </div>
+    
+    <form class="mail818-form" novalidate>
+      <div class="mail818-fields">
+        <div class="mail818-field mail818-field-email">
+          <label for="{{ $formId }}-email" class="mail818-label">
+            Email Address <span class="mail818-required" aria-label="required">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="{{ $formId }}-email" 
+            name="email" 
+            class="mail818-input" 
+            placeholder="you@example.com"
+            required
+            aria-required="true"
+            aria-describedby="{{ $formId }}-email-error"
+          >
+          <span id="{{ $formId }}-email-error" class="mail818-error" role="alert"></span>
+        </div>
+        
+        {{- if $showName -}}
+        <div class="mail818-field mail818-field-name">
+          <label for="{{ $formId }}-name" class="mail818-label">Name</label>
+          <input 
+            type="text" 
+            id="{{ $formId }}-name" 
+            name="name" 
+            class="mail818-input" 
+            placeholder="John Doe"
+          >
+        </div>
+        {{- end -}}
+        
+        {{- if $showMessage -}}
+        <div class="mail818-field mail818-field-message">
+          <label for="{{ $formId }}-message" class="mail818-label">Message</label>
+          <textarea 
+            id="{{ $formId }}-message" 
+            name="message" 
+            class="mail818-input mail818-textarea" 
+            rows="3" 
+            placeholder="Your message..."
+          ></textarea>
+        </div>
+        {{- end -}}
+        
+        <!-- Honeypot for spam prevention -->
+        <div class="mail818-honeypot" aria-hidden="true">
+          <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+      </div>
+      
+      <button type="submit" class="mail818-button">
+        <span class="mail818-button-content">
+          <span class="mail818-button-text">{{ $buttonText }}</span>
+          <svg class="mail818-button-spinner" viewBox="0 0 24 24" style="display: none;">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+              <animate attributeName="stroke-dashoffset" dur="1.5s" values="31.416;0;31.416" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </span>
+      </button>
+    </form>
+  </div>
+</div>
+
+{{- if not (.context.Page.Scratch.Get "mail818-loaded") -}}
+{{- .context.Page.Scratch.Set "mail818-loaded" true -}}
+<style>
+/* Base styles */
+.mail818-widget {
+  --mail818-primary: #3b82f6;
+  --mail818-primary-hover: #2563eb;
+  --mail818-success: #10b981;
+  --mail818-error: #ef4444;
+  --mail818-text: #111827;
+  --mail818-text-muted: #6b7280;
+  --mail818-bg: #ffffff;
+  --mail818-bg-secondary: #f9fafb;
+  --mail818-border: #d1d5db;
+  --mail818-radius: 0.375rem;
+  
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+/* Dark theme */
+.mail818-theme-dark {
+  --mail818-text: #f9fafb;
+  --mail818-text-muted: #d1d5db;
+  --mail818-bg: #1f2937;
+  --mail818-bg-secondary: #111827;
+  --mail818-border: #4b5563;
+}
+
+.mail818-content {
+  background: var(--mail818-bg-secondary);
+  padding: 1.5rem;
+  border-radius: var(--mail818-radius);
+}
+
+.mail818-compact .mail818-content {
+  padding: 1rem;
+}
+
+.mail818-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--mail818-text);
+}
+
+.mail818-description {
+  margin: 0 0 1rem;
+  color: var(--mail818-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Form fields */
+.mail818-fields {
+  margin-bottom: 1rem;
+}
+
+.mail818-field {
+  margin-bottom: 1rem;
+}
+
+.mail818-compact .mail818-field {
+  margin-bottom: 0.75rem;
+}
+
+.mail818-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--mail818-text);
+}
+
+.mail818-required {
+  color: var(--mail818-error);
+}
+
+.mail818-input,
+.mail818-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--mail818-bg);
+  border: 1px solid var(--mail818-border);
+  border-radius: var(--mail818-radius);
+  color: var(--mail818-text);
+  font-size: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mail818-input:focus,
+.mail818-textarea:focus {
+  outline: none;
+  border-color: var(--mail818-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.mail818-input.error {
+  border-color: var(--mail818-error);
+}
+
+.mail818-error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--mail818-error);
+}
+
+/* Button */
+.mail818-button {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: var(--mail818-primary);
+  color: white;
+  border: none;
+  border-radius: var(--mail818-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mail818-button:hover:not(:disabled) {
+  background: var(--mail818-primary-hover);
+}
+
+.mail818-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mail818-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mail818-button-spinner {
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.5rem;
+}
+
+/* Alerts */
+.mail818-alert {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: var(--mail818-radius);
+  font-size: 0.875rem;
+}
+
+.mail818-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mail818-alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--mail818-success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.mail818-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--mail818-error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Honeypot */
+.mail818-honeypot {
+  position: absolute;
+  left: -5000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .mail818-content {
+    padding: 2rem;
+  }
+  
+  .mail818-title {
+    font-size: 1.5rem;
+  }
+  
+  .mail818-description {
+    font-size: 1rem;
+  }
+  
+  .mail818-input,
+  .mail818-textarea,
+  .mail818-button {
+    font-size: 1rem;
+  }
+}
+</style>
+
+<script>
+(function() {
+  var MAIL818_API_KEY = '{{ $apiKey }}';
+  var MAIL818_PROJECT_ID = '{{ $projectId }}';
+  var MAIL818_API_URL = '{{ $apiUrl }}';
+  
+  function loadMail818SDK(callback) {
+    if (window.Mail818) {
+      callback();
+      return;
+    }
+    
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/@mail818/sdk@latest/dist/index.umd.js';
+    script.async = true;
+    script.onload = callback;
+    script.onerror = function() {
+      console.error('Failed to load Mail818 SDK');
+    };
+    document.head.appendChild(script);
+  }
+  
+  function initMail818Forms() {
+    var forms = document.querySelectorAll('.mail818-widget');
+    
+    forms.forEach(function(widget) {
+      if (widget.dataset.initialized) return;
+      widget.dataset.initialized = 'true';
+      
+      var form = widget.querySelector('.mail818-form');
+      var successAlert = widget.querySelector('.mail818-alert-success');
+      var errorAlert = widget.querySelector('.mail818-alert-error');
+      var errorMessage = widget.querySelector('.mail818-error-message');
+      var submitButton = widget.querySelector('.mail818-button');
+      var buttonText = widget.querySelector('.mail818-button-text');
+      var spinner = widget.querySelector('.mail818-button-spinner');
+      var emailInput = widget.querySelector('input[name="email"]');
+      var emailError = widget.querySelector('.mail818-error');
+      
+      var client = new Mail818.Mail818Client(MAIL818_API_KEY, {
+        projectId: MAIL818_PROJECT_ID,
+        baseUrl: MAIL818_API_URL
+      });
+      
+      // Email validation on blur
+      emailInput.addEventListener('blur', function() {
+        var email = this.value.trim();
+        if (email && !Mail818.isValidEmail(email)) {
+          this.classList.add('error');
+          if (emailError) {
+            emailError.textContent = 'Please enter a valid email address';
+          }
+        } else {
+          this.classList.remove('error');
+          if (emailError) {
+            emailError.textContent = '';
+          }
+        }
+      });
+      
+      // Form submission
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Reset alerts
+        successAlert.style.display = 'none';
+        errorAlert.style.display = 'none';
+        
+        var formData = new FormData(form);
+        
+        // Check honeypot
+        if (formData.get('website')) {
+          return;
+        }
+        
+        // Validate email
+        var email = formData.get('email');
+        if (!email || !Mail818.isValidEmail(email)) {
+          emailInput.classList.add('error');
+          if (emailError) {
+            emailError.textContent = 'Please enter a valid email address';
+          }
+          return;
+        }
+        
+        // Show loading state
+        submitButton.disabled = true;
+        buttonText.style.display = 'none';
+        spinner.style.display = 'block';
+        
+        try {
+          var response = await client.submit({
+            email: email,
+            name: formData.get('name') || undefined,
+            message: formData.get('message') || undefined,
+            metadata: {
+              source: 'hugo-partial',
+              page: window.location.pathname,
+              title: document.title,
+              language: document.documentElement.lang || 'en'
+            }
+          });
+          
+          if (response.success) {
+            successAlert.style.display = 'flex';
+            form.reset();
+            
+            // Analytics tracking
+            if (typeof gtag !== 'undefined') {
+              gtag('event', 'newsletter_signup', {
+                event_category: 'engagement',
+                event_label: 'hugo-partial'
+              });
+            }
+            
+            // Hide success message after 5 seconds
+            setTimeout(function() {
+              successAlert.style.display = 'none';
+            }, 5000);
+          } else {
+            errorMessage.textContent = response.message || 'Submission failed. Please try again.';
+            errorAlert.style.display = 'flex';
+          }
+        } catch (error) {
+          if (error instanceof Mail818.Mail818ValidationError) {
+            errorMessage.textContent = 'Please check your email address.';
+          } else if (error instanceof Mail818.Mail818RateLimitError) {
+            errorMessage.textContent = 'Too many attempts. Please try again later.';
+          } else if (error instanceof Mail818.Mail818NetworkError) {
+            errorMessage.textContent = 'Connection error. Please check your internet.';
+          } else {
+            errorMessage.textContent = 'An error occurred. Please try again.';
+          }
+          errorAlert.style.display = 'flex';
+          console.error('Mail818 error:', error);
+        } finally {
+          submitButton.disabled = false;
+          buttonText.style.display = 'inline';
+          spinner.style.display = 'none';
+        }
+      });
+    });
+  }
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      loadMail818SDK(initMail818Forms);
+    });
+  } else {
+    loadMail818SDK(initMail818Forms);
+  }
+})();
+</script>
+{{- end -}}

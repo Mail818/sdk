@@ -1,0 +1,245 @@
+/**
+ * Mail818 Form Styles
+ * Minimal, customizable styling for Mail818 forms
+ */
+
+/* Container */
+.mail818-container {
+  --mail818-primary: #2563eb;
+  --mail818-primary-hover: #1d4ed8;
+  --mail818-success: #10b981;
+  --mail818-error: #ef4444;
+  --mail818-warning: #f59e0b;
+  --mail818-info: #3b82f6;
+  --mail818-border: #d1d5db;
+  --mail818-text: #111827;
+  --mail818-text-muted: #6b7280;
+  --mail818-bg: #ffffff;
+  --mail818-bg-hover: #f9fafb;
+  
+  font-family: system-ui, -apple-system, sans-serif;
+  max-width: 100%;
+  margin: 1rem 0;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mail818-container {
+    --mail818-border: #374151;
+    --mail818-text: #f9fafb;
+    --mail818-text-muted: #9ca3af;
+    --mail818-bg: #1f2937;
+    --mail818-bg-hover: #374151;
+  }
+}
+
+/* Form */
+.mail818-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Field wrapper */
+.mail818-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Labels */
+.mail818-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--mail818-text);
+}
+
+.mail818-required {
+  color: var(--mail818-error);
+}
+
+/* Inputs */
+.mail818-field input,
+.mail818-field select,
+.mail818-field textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mail818-border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--mail818-text);
+  background-color: var(--mail818-bg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mail818-field input:focus,
+.mail818-field select:focus,
+.mail818-field textarea:focus {
+  outline: none;
+  border-color: var(--mail818-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Checkbox and radio */
+.mail818-checkbox-wrapper,
+.mail818-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mail818-checkbox-wrapper input[type="checkbox"],
+.mail818-radio-item input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.mail818-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Help text */
+.mail818-help {
+  font-size: 0.75rem;
+  color: var(--mail818-text-muted);
+}
+
+/* Error states */
+.mail818-field--error input,
+.mail818-field--error select,
+.mail818-field--error textarea {
+  border-color: var(--mail818-error);
+}
+
+.mail818-error {
+  font-size: 0.75rem;
+  color: var(--mail818-error);
+  min-height: 1rem;
+}
+
+/* Submit button */
+.mail818-submit {
+  padding: 0.625rem 1.25rem;
+  background-color: var(--mail818-primary);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mail818-submit:hover:not(:disabled) {
+  background-color: var(--mail818-primary-hover);
+}
+
+.mail818-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading state */
+.mail818-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--mail818-text-muted);
+}
+
+.mail818-loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  border: 2px solid var(--mail818-border);
+  border-top-color: var(--mail818-primary);
+  border-radius: 50%;
+  animation: mail818-spin 0.6s linear infinite;
+}
+
+@keyframes mail818-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Messages */
+.mail818-message {
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.mail818-message--success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--mail818-success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.mail818-message--error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--mail818-error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.mail818-message--warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--mail818-warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.mail818-message--info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--mail818-info);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Count display */
+.mail818-count-section {
+  text-align: center;
+  padding: 0.5rem 0;
+  color: var(--mail818-text-muted);
+  font-size: 0.875rem;
+}
+
+.mail818-count-display {
+  font-weight: 500;
+}
+
+/* Stats mode */
+.mail818-stats {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: var(--mail818-bg-hover);
+  border-radius: 0.375rem;
+  color: var(--mail818-text);
+  font-size: 0.875rem;
+}
+
+.mail818-stats--loading {
+  opacity: 0.7;
+}
+
+.mail818-stats--error {
+  color: var(--mail818-error);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.mail818-stats--loaded {
+  opacity: 1;
+}
+
+/* Utility classes */
+.mail818-hidden {
+  display: none !important;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .mail818-form {
+    max-width: 24rem;
+  }
+}

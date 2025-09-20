@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail818 SDK Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        .test-form {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #666;
+        }
+        .log-info { border-left-color: #0066cc; }
+        .log-success { border-left-color: #4caf50; }
+        .log-error { border-left-color: #f44336; }
+        .log-warn { border-left-color: #ff9800; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.ready { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mail818 SDK Local Test</h1>
+
+        <div id="status" class="status loading">
+            Status: Loading SDK...
+        </div>
+
+        <!-- Source Configuration -->
+        <div class="test-form" style="background: #e3f2fd;">
+            <h2>Source Configuration</h2>
+            <div class="form-group">
+                <label for="source-ulid">Source ULID:</label>
+                <input type="text" id="source-ulid" placeholder="Enter 26-character ULID" maxlength="26" style="font-family: monospace;">
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Current: <span id="current-ulid" style="font-family: monospace;">01K50DMCRR9R1RDKWA4RMSPT4D</span>
+                </small>
+            </div>
+            <button onclick="updateSourceAndReload()" style="background: #4caf50;">Update Source & Reload SDK</button>
+            <button onclick="generateTestULID()" style="background: #ff9800; margin-left: 10px;">Generate Test ULID</button>
+        </div>
+
+        <!-- Test with loader script -->
+        <div class="test-form">
+            <h2>Test 1: Loader Script</h2>
+            <p>Using collect.js with organization key</p>
+            <div id="loader-status">Waiting for initialization...</div>
+        </div>
+
+        <!-- Test form that should be enhanced -->
+        <div class="test-form">
+            <h2>Test 2: Form Enhancement</h2>
+            <form data-mail818 id="test-form">
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" required placeholder="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="name">Name (optional):</label>
+                    <input type="text" id="name" name="name" placeholder="John Doe">
+                </div>
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+
+        <!-- Console output -->
+        <div>
+            <h2>Console Output</h2>
+            <div id="console" class="console">
+                <div class="log-entry log-info">Console initialized...</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div style="margin-top: 20px;">
+            <h3>Test Controls</h3>
+            <button onclick="checkSDKStatus()">Check SDK Status</button>
+            <button onclick="clearConsole()">Clear Console</button>
+            <button onclick="reloadSDK()">Reload SDK</button>
+        </div>
+    </div>
+
+    <!-- SDK loader will be dynamically added here -->
+    <div id="sdk-loader"></div>
+
+    <script>
+        // Custom console to display logs on page
+        const customConsole = document.getElementById('console');
+        let logCount = 0;
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            customConsole.appendChild(entry);
+            customConsole.scrollTop = customConsole.scrollHeight;
+            logCount++;
+
+            // Keep only last 50 logs
+            if (logCount > 50) {
+                customConsole.removeChild(customConsole.firstElementChild);
+                logCount--;
+            }
+        }
+
+        // Get saved ULID from localStorage or use default
+        // Use the organization key you provided: 01K5GMYQ7GRBBC939T01NNA4T6
+        const DEFAULT_ULID = '01K5GMYQ7GRBBC939T01NNA4T6';
+        let currentULID = localStorage.getItem('mail818-test-ulid') || DEFAULT_ULID;
+
+        // Load SDK with the current ULID
+        function loadSDKScript(ulid) {
+            // Remove any existing SDK script
+            const existingScript = document.querySelector('script[mail818-id]');
+            if (existingScript) {
+                existingScript.remove();
+            }
+
+            // Clear any existing SDK state
+            Object.keys(window).forEach(key => {
+                if (key.startsWith('mail818_')) {
+                    delete window[key];
+                }
+            });
+            delete window.mail818SDKLoading;
+            delete window.Mail818;
+
+            // Create new script tag
+            const script = document.createElement('script');
+            script.setAttribute('mail818-id', ulid);
+            // Load source file directly for easier debugging
+            script.src = '/collect.js?' + Date.now(); // Cache bust
+            document.getElementById('sdk-loader').appendChild(script);
+
+            // Update UI
+            document.getElementById('current-ulid').textContent = ulid;
+            document.getElementById('source-ulid').value = ulid;
+            document.getElementById('status').className = 'status loading';
+            document.getElementById('status').textContent = 'Status: Loading SDK...';
+            document.getElementById('loader-status').textContent = 'Waiting for initialization...';
+
+            // Clear console before loading
+            customConsole.innerHTML = '';
+            logCount = 0;
+            addLog(`Loading SDK with ULID: ${ulid}`, 'info');
+        }
+
+        // Initial load
+        loadSDKScript(currentULID);
+
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warn');
+        };
+
+        // Listen for Mail818 events
+        document.addEventListener('mail818:ready', function(event) {
+            addLog('Mail818 SDK Ready! Organization key: ' + event.detail.organizationKey, 'success');
+            addLog('Sources loaded: ' + JSON.stringify(event.detail.sources), 'info');
+
+            document.getElementById('status').className = 'status ready';
+            document.getElementById('status').textContent = 'Status: SDK Ready';
+            document.getElementById('loader-status').textContent = '✅ Loader initialized successfully';
+        });
+
+        document.addEventListener('mail818:error', function(event) {
+            addLog('Mail818 Error: ' + event.detail.error, 'error');
+
+            document.getElementById('status').className = 'status error';
+            document.getElementById('status').textContent = 'Status: Error - ' + event.detail.error;
+            document.getElementById('loader-status').textContent = '❌ ' + event.detail.error;
+        });
+
+        // Form submission handler
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            addLog('Form submitted', 'info');
+            // The SDK should handle this if properly initialized
+        });
+
+        // Test control functions
+        function checkSDKStatus() {
+            const sdkVar = window['mail818_' + currentULID];
+
+            if (sdkVar) {
+                addLog('SDK Status: ' + sdkVar.status, 'info');
+                if (sdkVar.sources) {
+                    addLog('Sources: ' + JSON.stringify(sdkVar.sources, null, 2), 'info');
+                }
+                if (sdkVar.error) {
+                    addLog('Error: ' + sdkVar.error, 'error');
+                }
+            } else {
+                addLog('SDK not found for organization key: ' + currentULID, 'warn');
+            }
+
+            // Check global Mail818 object
+            if (window.Mail818) {
+                addLog('Global Mail818 object exists', 'success');
+                addLog('Available methods: ' + Object.keys(window.Mail818).join(', '), 'info');
+            } else {
+                addLog('Global Mail818 object not found', 'warn');
+            }
+        }
+
+        function clearConsole() {
+            customConsole.innerHTML = '<div class="log-entry log-info">Console cleared</div>';
+            logCount = 1;
+        }
+
+        function reloadSDK() {
+            // Reload with current ULID
+            loadSDKScript(currentULID);
+        }
+
+        function updateSourceAndReload() {
+            const input = document.getElementById('source-ulid');
+            const ulid = input.value.trim().toUpperCase();
+
+            // Validate ULID format
+            if (!ulid) {
+                addLog('Please enter a ULID', 'error');
+                return;
+            }
+
+            if (!/^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/.test(ulid)) {
+                addLog('Invalid ULID format. Must be 26 characters using Crockford base32 alphabet', 'error');
+                return;
+            }
+
+            // Save to localStorage and reload
+            localStorage.setItem('mail818-test-ulid', ulid);
+            currentULID = ulid;
+            clearConsole();
+            addLog('Updating source to: ' + ulid, 'info');
+            loadSDKScript(ulid);
+        }
+
+        function generateTestULID() {
+            // Generate a valid test ULID (simplified - not a real ULID)
+            const chars = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+            const timestamp = Date.now().toString(32).toUpperCase().padStart(10, '0').substring(0, 10);
+            let randomPart = '';
+            for (let i = 0; i < 16; i++) {
+                randomPart += chars[Math.floor(Math.random() * chars.length)];
+            }
+            const testUlid = (timestamp + randomPart).substring(0, 26);
+
+            document.getElementById('source-ulid').value = testUlid;
+            addLog('Generated test ULID: ' + testUlid, 'info');
+            addLog('Note: This is a test ULID and may not exist in the database', 'warn');
+        }
+
+        // Log initial page load
+        addLog('Test page loaded', 'info');
+        addLog('Organization key: ' + currentULID, 'info');
+    </script>
+</body>
+</html>

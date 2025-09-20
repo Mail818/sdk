@@ -1,0 +1,340 @@
+{{/*
+  Mail818 Newsletter Form Shortcode
+  
+  Usage in content:
+  {{< mail818-form 
+    api-key="your-api-key" 
+    project-id="your-project-id"
+    title="Subscribe to Our Newsletter"
+    button="Subscribe"
+    success="Thank you for subscribing!"
+  >}}
+  
+  Or with site config:
+  {{< mail818-form >}}
+  
+  Add to your site config (config.toml):
+  [params.mail818]
+    apiKey = "your-api-key"
+    projectId = "your-project-id"
+    apiUrl = "https://api.mail818.com"
+*/}}
+
+{{- $apiKey := .Get "api-key" | default .Site.Params.mail818.apiKey -}}
+{{- $projectId := .Get "project-id" | default .Site.Params.mail818.projectId -}}
+{{- $apiUrl := .Get "api-url" | default .Site.Params.mail818.apiUrl | default "https://api.mail818.com" -}}
+{{- $title := .Get "title" | default "Subscribe to Our Newsletter" -}}
+{{- $description := .Get "description" | default "Get the latest updates delivered to your inbox." -}}
+{{- $buttonText := .Get "button" | default "Subscribe" -}}
+{{- $successMsg := .Get "success" | default "Thank you for subscribing!" -}}
+{{- $showName := .Get "show-name" | default "true" -}}
+{{- $showMessage := .Get "show-message" | default "true" -}}
+{{- $formId := printf "mail818-form-%s" (now.Unix) -}}
+
+<div class="mail818-form-container" id="{{ $formId }}">
+  <div class="mail818-form">
+    {{ with $title }}<h3>{{ . }}</h3>{{ end }}
+    {{ with $description }}<p>{{ . }}</p>{{ end }}
+    
+    <div class="mail818-message mail818-success" style="display: none;">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span>{{ $successMsg }}</span>
+    </div>
+    
+    <div class="mail818-message mail818-error" style="display: none;">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="mail818-error-text">Something went wrong. Please try again.</span>
+    </div>
+    
+    <form class="mail818-form-element">
+      <div class="mail818-field">
+        <label for="{{ $formId }}-email">Email Address <span class="mail818-required">*</span></label>
+        <input type="email" id="{{ $formId }}-email" name="email" required placeholder="you@example.com">
+        <span class="mail818-field-error"></span>
+      </div>
+      
+      {{ if eq $showName "true" }}
+      <div class="mail818-field">
+        <label for="{{ $formId }}-name">Name</label>
+        <input type="text" id="{{ $formId }}-name" name="name" placeholder="John Doe">
+      </div>
+      {{ end }}
+      
+      {{ if eq $showMessage "true" }}
+      <div class="mail818-field">
+        <label for="{{ $formId }}-message">Message</label>
+        <textarea id="{{ $formId }}-message" name="message" rows="4" placeholder="Tell us what interests you..."></textarea>
+      </div>
+      {{ end }}
+      
+      <!-- Honeypot field for spam prevention -->
+      <div style="position: absolute; left: -5000px;">
+        <input type="text" name="honeypot" tabindex="-1" autocomplete="off">
+      </div>
+      
+      <button type="submit" class="mail818-submit">
+        <span class="mail818-button-text">{{ $buttonText }}</span>
+        <span class="mail818-spinner" style="display: none;"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<style>
+.mail818-form-container {
+  margin: 2rem 0;
+}
+
+.mail818-form {
+  max-width: 500px;
+  background: #f9fafb;
+  padding: 2rem;
+  border-radius: 0.5rem;
+}
+
+.mail818-form h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mail818-form p {
+  margin: 0 0 1.5rem;
+  color: #6b7280;
+}
+
+.mail818-field {
+  margin-bottom: 1.25rem;
+}
+
+.mail818-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.mail818-required {
+  color: #ef4444;
+}
+
+.mail818-field input,
+.mail818-field textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.mail818-field input:focus,
+.mail818-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.mail818-field input.error,
+.mail818-field textarea.error {
+  border-color: #ef4444;
+}
+
+.mail818-field-error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #ef4444;
+}
+
+.mail818-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mail818-submit:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.mail818-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mail818-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.5rem;
+  border: 2px solid #ffffff30;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: mail818-spin 0.6s linear infinite;
+}
+
+@keyframes mail818-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mail818-message {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.mail818-message svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mail818-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.mail818-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+</style>
+
+<script>
+(function() {
+  // Load Mail818 SDK if not already loaded
+  if (!window.Mail818) {
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/@mail818/sdk@latest/dist/index.umd.js';
+    script.onload = initForm;
+    document.head.appendChild(script);
+  } else {
+    initForm();
+  }
+  
+  function initForm() {
+    var container = document.getElementById('{{ $formId }}');
+    var form = container.querySelector('.mail818-form-element');
+    var successMsg = container.querySelector('.mail818-success');
+    var errorMsg = container.querySelector('.mail818-error');
+    var errorText = container.querySelector('.mail818-error-text');
+    var submitBtn = container.querySelector('.mail818-submit');
+    var btnText = container.querySelector('.mail818-button-text');
+    var spinner = container.querySelector('.mail818-spinner');
+    
+    // Initialize Mail818 client
+    var client = new Mail818.Mail818Client('{{ $apiKey }}', {
+      projectId: '{{ $projectId }}',
+      baseUrl: '{{ $apiUrl }}'
+    });
+    
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Hide messages
+      successMsg.style.display = 'none';
+      errorMsg.style.display = 'none';
+      
+      // Get form data
+      var formData = new FormData(form);
+      
+      // Check honeypot
+      if (formData.get('honeypot')) {
+        return;
+      }
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      btnText.textContent = 'Subscribing...';
+      spinner.style.display = 'inline-block';
+      
+      try {
+        var submission = {
+          email: formData.get('email'),
+          name: formData.get('name') || undefined,
+          message: formData.get('message') || undefined,
+          metadata: {
+            source: 'hugo-shortcode',
+            page: window.location.pathname,
+            title: document.title
+          }
+        };
+        
+        var response = await client.submit(submission);
+        
+        if (response.success) {
+          successMsg.style.display = 'flex';
+          form.reset();
+          
+          // Track if analytics available
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'newsletter_signup', {
+              event_category: 'engagement',
+              event_label: 'hugo-form'
+            });
+          }
+        } else {
+          errorText.textContent = response.message || 'Submission failed. Please try again.';
+          errorMsg.style.display = 'flex';
+        }
+      } catch (error) {
+        if (error instanceof Mail818.Mail818ValidationError) {
+          errorText.textContent = 'Please enter a valid email address.';
+        } else if (error instanceof Mail818.Mail818RateLimitError) {
+          errorText.textContent = 'Too many attempts. Please try again later.';
+        } else if (error instanceof Mail818.Mail818NetworkError) {
+          errorText.textContent = 'Network error. Please check your connection.';
+        } else {
+          errorText.textContent = 'An error occurred. Please try again.';
+        }
+        errorMsg.style.display = 'flex';
+        console.error('Mail818 error:', error);
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = '{{ $buttonText }}';
+        spinner.style.display = 'none';
+      }
+    });
+    
+    // Email validation on blur
+    var emailInput = container.querySelector('input[type="email"]');
+    emailInput.addEventListener('blur', function() {
+      var email = this.value.trim();
+      if (email && !Mail818.isValidEmail(email)) {
+        this.classList.add('error');
+        var errorSpan = this.nextElementSibling;
+        if (errorSpan) {
+          errorSpan.textContent = 'Please enter a valid email address';
+        }
+      } else {
+        this.classList.remove('error');
+        var errorSpan = this.nextElementSibling;
+        if (errorSpan) {
+          errorSpan.textContent = '';
+        }
+      }
+    });
+  }
+})();
+</script>

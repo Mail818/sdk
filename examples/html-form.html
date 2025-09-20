@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mail818 - HTML Form Example</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .form-container {
+      background: #f5f5f5;
+      padding: 30px;
+      border-radius: 8px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Subscribe to Our Newsletter</h2>
+    <p>Get the latest updates delivered to your inbox.</p>
+    
+    <form id="emailForm">
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required placeholder="you@example.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="name">Name (optional)</label>
+        <input type="text" id="name" name="name" placeholder="John Doe">
+      </div>
+      
+      <div class="form-group">
+        <label for="message">Message (optional)</label>
+        <textarea id="message" name="message" rows="4" placeholder="Tell us what you're interested in..."></textarea>
+      </div>
+      
+      <!-- Honeypot field for spam prevention -->
+      <div style="position: absolute; left: -5000px;">
+        <input type="text" name="honeypot" id="honeypot" tabindex="-1" autocomplete="off">
+      </div>
+      
+      <button type="submit" id="submitBtn">
+        <span id="btnText">Subscribe</span>
+        <span id="btnLoader" class="loading" style="display: none;"></span>
+      </button>
+    </form>
+    
+    <div id="successMessage" class="message success">
+      <strong>Success!</strong> Thank you for subscribing. We'll be in touch soon.
+    </div>
+    
+    <div id="errorMessage" class="message error">
+      <strong>Error!</strong> <span id="errorText">Something went wrong. Please try again.</span>
+    </div>
+  </div>
+
+  <!-- Load Mail818 SDK from CDN (replace with your actual CDN URL) -->
+  <script src="https://unpkg.com/@mail818/sdk@latest/dist/index.umd.js"></script>
+  
+  <!-- Or load from local file -->
+  <!-- <script src="../dist/index.umd.js"></script> -->
+  
+  <script>
+    // Initialize Mail818 client
+    // Replace with your actual API key and list ID
+    const client = new Mail818.Mail818Client('your-api-key', {
+      listId: 'your-list-id',
+      baseUrl: 'https://api.mail818.com' // Or your custom API URL
+    });
+    
+    // Handle form submission
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Get form elements
+      const form = e.target;
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnLoader = document.getElementById('btnLoader');
+      const successMessage = document.getElementById('successMessage');
+      const errorMessage = document.getElementById('errorMessage');
+      const errorText = document.getElementById('errorText');
+      
+      // Hide previous messages
+      successMessage.style.display = 'none';
+      errorMessage.style.display = 'none';
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      btnText.textContent = 'Subscribing...';
+      btnLoader.style.display = 'inline-block';
+      
+      try {
+        // Prepare submission data
+        const submission = {
+          email: form.email.value.trim(),
+          name: form.name.value.trim() || undefined,
+          message: form.message.value.trim() || undefined,
+          honeypot: form.honeypot.value, // Should be empty
+          metadata: {
+            source: 'website',
+            page: window.location.pathname,
+            referrer: document.referrer || undefined,
+            timestamp: new Date().toISOString()
+          }
+        };
+        
+        // Submit to Mail818
+        const response = await client.submit(submission);
+        
+        if (response.success) {
+          // Show success message
+          successMessage.style.display = 'block';
+          form.reset();
+          
+          // Track conversion if analytics is available
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'conversion', {
+              'event_category': 'engagement',
+              'event_label': 'newsletter_signup'
+            });
+          }
+        } else {
+          // Show error from response
+          errorText.textContent = response.message || 'Submission failed. Please try again.';
+          errorMessage.style.display = 'block';
+        }
+      } catch (error) {
+        // Handle specific error types
+        if (error instanceof Mail818.Mail818ValidationError) {
+          errorText.textContent = `Validation error: ${error.message}`;
+        } else if (error instanceof Mail818.Mail818RateLimitError) {
+          errorText.textContent = `Too many attempts. Please try again in ${error.retryAfter} seconds.`;
+        } else if (error instanceof Mail818.Mail818NetworkError) {
+          errorText.textContent = 'Network error. Please check your connection and try again.';
+        } else {
+          errorText.textContent = error.message || 'An unexpected error occurred.';
+        }
+        
+        errorMessage.style.display = 'block';
+        console.error('Mail818 submission error:', error);
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        btnText.textContent = 'Subscribe';
+        btnLoader.style.display = 'none';
+      }
+    });
+    
+    // Optional: Email validation on blur
+    document.getElementById('email').addEventListener('blur', function() {
+      const email = this.value.trim();
+      if (email && !Mail818.isValidEmail(email)) {
+        this.setCustomValidity('Please enter a valid email address');
+      } else {
+        this.setCustomValidity('');
+      }
+    });
+  </script>
+</body>
+</html>
