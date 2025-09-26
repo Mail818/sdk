@@ -16,6 +16,8 @@ import type {
  * Native form enhancement options
  */
 export interface NativeFormOptions {
+  /** Organization key (ID) */
+  organizationKey?: string
   /** Source ID for the native form */
   sourceId: string
   /** List ID for the source */
@@ -50,9 +52,7 @@ export interface NativeFormOptions {
   showLoadingState?: boolean
   /** Replace form with success message */
   replaceOnSuccess?: boolean
-  /** Validation configuration (passed from API) */
-  validationEnabled?: boolean
-  /** Validation rules (passed from API) */
+  /** Validation rules (passed from API) - empty array means no validation */
   validationRules?: ValidationRule[]
   /** Field mappings (passed from API) */
   fieldMappings?: Array<{ htmlField: string; mail818Field: string }>
@@ -91,7 +91,6 @@ export class NativeForms {
 
     // Set up initial configuration from options
     this.config = {
-      validationEnabled: options.validationEnabled || false,
       validationRules: options.validationRules || [],
       fieldMappings: options.fieldMappings,
       successBehavior: options.successBehavior || 'message',
@@ -203,12 +202,10 @@ export class NativeForms {
       await this.handleFormSubmit(form)
     })
 
-    // Add client-side validation only if enabled
-    if (this.config?.validationEnabled && this.config?.validationRules) {
+    // Add client-side validation if rules are provided
+    if (this.config?.validationRules && this.config.validationRules.length > 0) {
       this.addValidation(form)
     }
-
-    console.log('[Mail818] Form enhanced:', form)
   }
 
   /**
@@ -340,19 +337,18 @@ export class NativeForms {
    */
   private async handleFormSubmit(form: HTMLFormElement): Promise<void> {
     try {
-      // Show loading state
-      if (this.options.showLoadingState) {
-        this.showLoadingState(form, true)
-      }
-
-      // Validate all fields
+      // Validate all fields FIRST
       if (!this.validateForm(form)) {
-        this.showLoadingState(form, false)
         return
       }
 
-      // Collect form data
+      // Collect form data BEFORE disabling fields
       const formData = this.collectFormData(form)
+
+      // Show loading state AFTER collecting data
+      if (this.options.showLoadingState) {
+        this.showLoadingState(form, true)
+      }
 
       // Submit to API
       const response = await this.submitForm(formData)
@@ -384,8 +380,8 @@ export class NativeForms {
       return false
     }
 
-    // Then check our custom validation rules if enabled
-    if (this.config?.validationEnabled && this.config?.validationRules) {
+    // Then check our custom validation rules if any
+    if (this.config?.validationRules && this.config.validationRules.length > 0) {
       let isValid = true
 
       this.config.validationRules.forEach(rule => {
@@ -438,11 +434,11 @@ export class NativeForms {
   private async submitForm(data: Record<string, unknown>): Promise<any> {
     const url = `${this.options.apiUrl}/v1/collect`
 
-    // Add sourceId and listId to the data
+    // For native forms, only add sourceId to the data
+    // The API will determine the organization and list from the source
     const submissionData = {
       ...data,
-      sourceId: this.options.sourceId,
-      listId: this.options.listId
+      sourceId: this.options.sourceId
     }
 
     try {

@@ -102,7 +102,7 @@
                 <label for="source-ulid">Source ULID:</label>
                 <input type="text" id="source-ulid" placeholder="Enter 26-character ULID" maxlength="26" style="font-family: monospace;">
                 <small style="color: #666; display: block; margin-top: 5px;">
-                    Current: <span id="current-ulid" style="font-family: monospace;">01K50DMCRR9R1RDKWA4RMSPT4D</span>
+                    Current: <span id="current-ulid" style="font-family: monospace;">01K5GMYQ7GRBBC939T01NNA4T6</span>
                 </small>
             </div>
             <button onclick="updateSourceAndReload()" style="background: #4caf50;">Update Source & Reload SDK</button>
@@ -197,8 +197,8 @@
             // Create new script tag
             const script = document.createElement('script');
             script.setAttribute('mail818-id', ulid);
-            // Load source file directly for easier debugging
-            script.src = '/collect.js?' + Date.now(); // Cache bust
+            // Load from CDN folder (built with dev or prod config)
+            script.src = '/cdn/collect.js?' + Date.now(); // Cache bust
             document.getElementById('sdk-loader').appendChild(script);
 
             // Update UI

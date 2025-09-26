@@ -55,16 +55,13 @@
       if (window.Mail818 && window.Mail818.enhanceForm) {
         sources.forEach(function(source) {
           const enhanceConfig = {
-            type: source.type || 'native_form', // Form type (native_form, fly_in, popup, etc.)
-            sourceId: source.id,
-            listId: source.listId,
-            // Native forms expects these field names
+            type: 'native_form', // Always native_form for now
+            organizationKey: organizationKey, // Pass the organization key
+            sourceId: source.sourceId, // Use the new property name
+            // API configuration
             apiUrl: API_BASE,
-            apiKey: source.apiToken || '',
-            // Legacy field names for compatibility
-            apiToken: source.apiToken || '',
-            formSelector: source.selector || 'form[data-mail818]',
             apiEndpoint: API_BASE + '/v1/collect',
+            formSelector: source.selector || 'form[data-mail818]',
             // Success behavior from source config
             successBehavior: source.successBehavior || 'message',
             successMessage: source.successMessage,
@@ -74,8 +71,8 @@
             offlineEnabled: source.offlineEnabled || false,
             showLoadingState: source.showLoadingState || false,
             replaceOnSuccess: source.replaceOnSuccess || false,
-            // Validation
-            allowedOrigins: source.allowedOrigins || []
+            // Validation - rules array determines if validation is enabled
+            validationRules: source.validationRules || []
           };
 
           // Enhance forms matching this source's selector
@@ -148,13 +145,7 @@
 
     // Create loading promise
     window.mail818SDKLoading = new Promise(function(resolve, reject) {
-      // Load CSS
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = CDN_BASE ? CDN_BASE + '/' + SDK_VERSION + '/mail818.min.css' : SDK_PATH + SDK_VERSION + '/sdk.css';
-      document.head.appendChild(link);
-
-      // Load JavaScript
+      // Load JavaScript SDK
       const script = document.createElement('script');
       script.async = true;
       script.src = CDN_BASE ? CDN_BASE + '/' + SDK_VERSION + '/mail818.min.js' : SDK_PATH + SDK_VERSION + '/mail818.min.js';
@@ -162,16 +153,10 @@
       script.onload = function() {
         // Give a small delay for the SDK to initialize
         setTimeout(function() {
-          console.log('Mail818 SDK check - window.Mail818:', window.Mail818);
-          if (window.Mail818) {
-            console.log('Mail818 methods:', Object.keys(window.Mail818));
-          }
           if (window.Mail818 && window.Mail818.enhanceForm) {
             resolve();
           } else {
             console.error('Mail818 SDK not properly initialized');
-            console.error('window.Mail818:', window.Mail818);
-            console.error('Global Mail818:', typeof Mail818 !== 'undefined' ? Mail818 : 'undefined');
             reject(new Error('Mail818 SDK loaded but not available'));
           }
         }, 100); // Increased timeout

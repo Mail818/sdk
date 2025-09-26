@@ -34,23 +34,25 @@ export function enhanceForm(options: EnhanceFormOptions) {
   switch (formType) {
     case 'native_form':
       if (typeof window !== 'undefined') {
+        // Always create a new instance for each source
+        // Each source may have different configuration
+        const nativeForms = new NativeForms(options as NativeFormOptions);
+        nativeForms.init();
+
+        // Store instances in an array for debugging
         const instances = window.__mail818Instances || { nativeForms: null };
-        if (!instances.nativeForms) {
-          instances.nativeForms = new NativeForms(options as NativeFormOptions);
-          instances.nativeForms.init();
-          window.__mail818Instances = instances;
-        }
+        window.__mail818Instances = instances;
       }
       break;
     default:
       console.warn(`Unknown form type: ${formType}, defaulting to native_form`);
       if (typeof window !== 'undefined') {
+        // Always create a new instance for each source
+        const nativeForms = new NativeForms(options as NativeFormOptions);
+        nativeForms.init();
+
         const instances = window.__mail818Instances || { nativeForms: null };
-        if (!instances.nativeForms) {
-          instances.nativeForms = new NativeForms(options as NativeFormOptions);
-          instances.nativeForms.init();
-          window.__mail818Instances = instances;
-        }
+        window.__mail818Instances = instances;
       }
   }
 }

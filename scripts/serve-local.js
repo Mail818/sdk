@@ -5,10 +5,14 @@
  * This serves the SDK files and test page with proper headers
  */
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const url = require('url');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const PORT = 8080;
 const HOST = 'localhost';
@@ -31,19 +35,35 @@ const server = http.createServer((req, res) => {
   console.log(`${req.method} ${req.url}`);
 
   // Parse URL
-  const parsedUrl = url.parse(req.url);
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   let pathname = parsedUrl.pathname;
 
   // Default to test.html
-  if (pathname === '/') {
-    pathname = '/test.html';
+  if (pathname === '/' || pathname === '/test.html') {
+    pathname = '/public/test.html';
+  }
+
+  // favicon.ico
+  if (pathname === '/favicon.ico') {
+    pathname = '/public/favicon.ico';
+  }
+
+  // mail818 library
+  if (pathname.startsWith('/latest/')) {
+    pathname = pathname.replace('/latest/', '/dist/');
+  }
+
+  if (pathname.startsWith('/cdn/')) {
+    pathname = '/dist' + pathname;
   }
 
   // Build the absolute file path
-  const filePath = path.join(__dirname, pathname);
+  const filePath = path.join(__dirname, '..', pathname);
 
   // Get file extension
   const ext = path.parse(pathname).ext;
+
+  console.log('>>> PATHS', pathname, filePath, ext);
 
   // Read file from file system
   fs.readFile(filePath, (err, data) => {

@@ -436,7 +436,6 @@ export class Mail818Form {
     try {
       // Test mode
       if (this.options.testMode) {
-        console.log('Test mode submission:', formData);
         this.showMessage('Test submission successful!', 'success');
         this.options.onSuccess?.({ success: true, message: 'Test success' });
         return;
