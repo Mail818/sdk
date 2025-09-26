@@ -180,7 +180,7 @@
         // Load SDK with the current ULID
         function loadSDKScript(ulid) {
             // Remove any existing SDK script
-            const existingScript = document.querySelector('script[mail818-id]');
+            const existingScript = document.querySelector('script[data-mail818-id]');
             if (existingScript) {
                 existingScript.remove();
             }
@@ -196,7 +196,7 @@
 
             // Create new script tag
             const script = document.createElement('script');
-            script.setAttribute('mail818-id', ulid);
+            script.setAttribute('data-mail818-id', ulid);
             // Load from CDN folder (built with dev or prod config)
             script.src = '/cdn/collect.js?' + Date.now(); // Cache bust
             document.getElementById('sdk-loader').appendChild(script);

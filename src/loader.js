@@ -14,15 +14,15 @@
   const SDK_PATH = import.meta.env.VITE_SDK_PATH !== undefined ? import.meta.env.VITE_SDK_PATH : '/';
 
   // Find the script tag with organization key attribute
-  const scriptTag = document.querySelector('script[mail818-id]');
+  const scriptTag = document.querySelector('script[data-mail818-id]');
   if (!scriptTag) {
-    console.warn('Mail818: No script tag found with mail818-id attribute');
+    console.warn('Mail818: No script tag found with data-mail818-id attribute');
     return;
   }
 
-  const organizationKey = scriptTag.getAttribute('mail818-id');
+  const organizationKey = scriptTag.getAttribute('data-mail818-id');
   if (!organizationKey) {
-    console.error('Mail818: mail818-id attribute is empty');
+    console.error('Mail818: data-mail818-id attribute is empty');
     return;
   }
 

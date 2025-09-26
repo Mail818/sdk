@@ -17,7 +17,7 @@ This SDK is **fully open source** for transparency and security. We believe user
 Add this single line to your website:
 
 ```html
-<script async mail818-id="YOUR_ORGANIZATION_KEY" src="https://cdn.mail818.com/collect.js"></script>
+<script async data-mail818-id="YOUR_ORGANIZATION_KEY" src="https://cdn.mail818.com/collect.js"></script>
 ```
 
 This automatically:
