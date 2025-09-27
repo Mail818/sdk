@@ -38,6 +38,10 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   let pathname = parsedUrl.pathname;
 
+  if (pathname.startsWith('/test')) {
+    pathname = '/public'+pathname;
+  }
+
   // Default to test.html
   if (pathname === '/' || pathname === '/test.html') {
     pathname = '/public/test.html';

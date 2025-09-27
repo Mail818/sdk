@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Mail818 Production Form</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    form {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #console {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-entry {
+      margin: 2px 0;
+      padding: 2px 5px;
+    }
+    .log-info { color: #0066cc; }
+    .log-warn { color: #ff9900; background: #fff3cd; }
+    .log-error { color: #cc0000; background: #f8d7da; }
+  </style>
+</head>
+<body>
+  <h1>Test Mail818 Production Form</h1>
+
+  <p>This page tests the production Mail818 SDK with the same setup as mail818.com</p>
+
+  <h2>Test with data-mail818-waitlist attribute</h2>
+  <form id="test-form" data-mail818-waitlist>
+    <input type="email" name="email" placeholder="test@example.com" required>
+    <button type="submit">Submit</button>
+    <div id="form-message"></div>
+  </form>
+
+  <h2>Console Output</h2>
+  <div id="console"></div>
+
+  <!-- Mail818 SDK - Same as production -->
+  <script async data-mail818-id="01K50DMCRR9R1RDKWA4RMSPT4D"
+          src="https://cdn.mail818.com/collect.js"></script>
+
+  <script>
+    // Capture console output
+    const consoleDiv = document.getElementById('console');
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+
+    function addToConsole(msg, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry log-' + type;
+      entry.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+      consoleDiv.appendChild(entry);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      addToConsole(args.join(' '), 'info');
+    };
+
+    console.warn = function(...args) {
+      originalWarn.apply(console, args);
+      addToConsole(args.join(' '), 'warn');
+    };
+
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      addToConsole(args.join(' '), 'error');
+    };
+
+    // Log when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM ready');
+
+      // Check for Mail818 SDK periodically
+      let checkCount = 0;
+      const checkInterval = setInterval(() => {
+        checkCount++;
+        if (window.Mail818) {
+          console.log('Mail818 SDK detected after ' + checkCount + ' checks');
+          clearInterval(checkInterval);
+        } else if (checkCount > 20) {
+          console.warn('Mail818 SDK not detected after 20 checks');
+          clearInterval(checkInterval);
+        }
+      }, 500);
+
+      // Add form submit listener with capture phase to detect SDK interception
+      let sdkIntercepted = false;
+
+      // Listen in capture phase to see if SDK prevents default
+      document.getElementById('test-form').addEventListener('submit', function(e) {
+        // Check if preventDefault was called by another handler
+        setTimeout(() => {
+          if (!sdkIntercepted) {
+            console.log('Form submitted - SDK did not intercept (test listener fired)');
+          }
+        }, 0);
+      }, true);
+
+      // Monitor for SDK interception
+      const originalPreventDefault = Event.prototype.preventDefault;
+      Event.prototype.preventDefault = function() {
+        if (this.type === 'submit') {
+          sdkIntercepted = true;
+          console.log('Form submission intercepted by SDK');
+        }
+        return originalPreventDefault.apply(this, arguments);
+      };
+    });
+
+    console.log('Test page loaded');
+  </script>
+</body>
+</html>

@@ -355,11 +355,13 @@ export class NativeForms {
 
       // Submit to API
       const response = await this.submitForm(formData)
+      console.log('[Mail818 NativeForms] API Response:', response)
 
       // Handle success
       if (response.success) {
         this.handleSuccess(form, response)
       } else {
+        console.log('[Mail818 NativeForms] API returned error:', response.error)
         throw new Error(response.error || 'Submission failed')
       }
     } catch (error) {
@@ -506,6 +508,8 @@ export class NativeForms {
    * Handle successful submission
    */
   private handleSuccess(form: HTMLFormElement, response: any): void {
+    console.log('[Mail818 NativeForms] handleSuccess called with config:', this.config)
+
     // Call custom success callback
     this.options.onSuccess?.(response)
 
@@ -538,13 +542,14 @@ export class NativeForms {
    * Handle submission error
    */
   private handleError(form: HTMLFormElement, error: Error): void {
-    console.error('[Mail818] Form submission error:', error)
+    console.error('[Mail818] Form submission error:', error.message)
 
     // Call custom error callback
     this.options.onError?.(error)
 
     // Show error message
     const message = error.message || 'An error occurred. Please try again.'
+    console.log('[Mail818 NativeForms] Showing error message:', message)
     this.showFormMessage(form, message, 'error')
   }
 
