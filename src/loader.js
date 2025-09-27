@@ -7,6 +7,8 @@
 (function() {
   'use strict';
 
+  console.log('[Mail818] Loader starting...');
+
   // Configuration - use environment variables that get replaced at build time
   const CDN_BASE = import.meta.env.VITE_CDN_BASE !== undefined ? import.meta.env.VITE_CDN_BASE : 'https://cdn.mail818.com';
   const API_BASE = import.meta.env.VITE_API_BASE !== undefined ? import.meta.env.VITE_API_BASE : 'https://api.mail818.com';
@@ -15,12 +17,14 @@
 
   // Find the script tag with organization key attribute
   const scriptTag = document.querySelector('script[data-mail818-id]');
+  console.log('[Mail818] Found script tag:', scriptTag);
   if (!scriptTag) {
     console.warn('Mail818: No script tag found with data-mail818-id attribute');
     return;
   }
 
   const organizationKey = scriptTag.getAttribute('data-mail818-id');
+  console.log('[Mail818] Organization key:', organizationKey);
   if (!organizationKey) {
     console.error('Mail818: data-mail818-id attribute is empty');
     return;
@@ -43,17 +47,21 @@
 
   // Fetch all source configurations for this organization key
   // The API will determine the domain from the Referer header
+  console.log('[Mail818] Fetching source configurations...');
   fetchSourcesConfig(organizationKey)
     .then(function(sources) {
+      console.log('[Mail818] Sources loaded:', sources);
       // Load the main SDK if not already loaded
       return loadSDK().then(function() {
         return sources;
       });
     })
     .then(function(sources) {
+      console.log('[Mail818] SDK loaded, enhancing forms...');
       // Initialize form enhancement for each source
       if (window.Mail818 && window.Mail818.enhanceForm) {
-        sources.forEach(function(source) {
+        sources.forEach(function(source, index) {
+          console.log('[Mail818] Enhancing source', index, ':', source);
           const enhanceConfig = {
             type: 'native_form', // Always native_form for now
             organizationKey: organizationKey, // Pass the organization key
@@ -76,6 +84,7 @@
           };
 
           // Enhance forms matching this source's selector
+          console.log('[Mail818] Calling enhanceForm with config:', enhanceConfig);
           window.Mail818.enhanceForm(enhanceConfig);
         });
 

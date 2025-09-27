@@ -151,10 +151,13 @@ export class NativeForms {
                     this.config?.formSelectors ||
                     'form[data-mail818], form.mail818-form'
 
+    console.log('[Mail818 NativeForms] Looking for forms with selector:', selector)
     const forms = document.querySelectorAll<HTMLFormElement>(selector)
+    console.log('[Mail818 NativeForms] Found forms:', forms.length)
 
-    forms.forEach(form => {
+    forms.forEach((form, index) => {
       if (!this.enhancedForms.has(form)) {
+        console.log(`[Mail818 NativeForms] Enhancing form ${index}:`, form)
         this.enhanceForm(form)
       }
     })
