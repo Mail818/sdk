@@ -9,8 +9,23 @@ import { OfflineQueue } from './offline-queue'
 import { Validators } from './validators'
 import type {
   FormConfiguration,
+  SuccessPosition,
   ValidationRule
 } from './types'
+
+/**
+ * SVG icon for success messages (checkmark in circle)
+ */
+const SUCCESS_ICON_SVG = `<svg class="mail818-message-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+</svg>`
+
+/**
+ * SVG icon for error messages (X in circle)
+ */
+const ERROR_ICON_SVG = `<svg class="mail818-message-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+</svg>`
 
 /**
  * Native form enhancement options
@@ -50,8 +65,16 @@ export interface NativeFormOptions {
   onError?: (error: Error) => void
   /** Show loading state during submission */
   showLoadingState?: boolean
-  /** Replace form with success message */
+  /** @deprecated Use successPosition instead */
   replaceOnSuccess?: boolean
+  /** Position of success message: 'replace', 'below-form', 'above-form', 'below-input' */
+  successPosition?: SuccessPosition
+  /** Whether to auto-remove the message after a delay */
+  autoRemove?: boolean
+  /** Delay in ms before auto-removing (default 5000) */
+  autoRemoveDelay?: number
+  /** Whether to show an icon in the message */
+  showIcon?: boolean
   /** Validation rules (passed from API) - empty array means no validation */
   validationRules?: ValidationRule[]
   /** Field mappings (passed from API) */
@@ -72,13 +95,22 @@ export class NativeForms {
   private observer: MutationObserver | null = null
 
   constructor(options: NativeFormOptions) {
+    // Handle legacy replaceOnSuccess option
+    const defaultPosition: SuccessPosition = options.replaceOnSuccess
+      ? 'replace'
+      : (options.successPosition || 'below-form')
+
     this.options = {
       apiUrl: 'https://api.mail818.com',
-      apiEndpoint: options.apiEndpoint || `${options.apiUrl || 'https://api.mail818.com'}/v1/collect`,
+      apiEndpoint: options.apiEndpoint ||
+        `${options.apiUrl || 'https://api.mail818.com'}/v1/collect`,
       detectDelay: 1000,
       offlineEnabled: true,
       showLoadingState: true,
-      replaceOnSuccess: false,
+      successPosition: defaultPosition,
+      autoRemove: true,
+      autoRemoveDelay: 5000,
+      showIcon: true,
       successBehavior: 'message',
       successMessage: 'Thank you for subscribing!',
       ...options
@@ -97,7 +129,10 @@ export class NativeForms {
       successMessage: options.successMessage,
       successRedirectUrl: options.successRedirectUrl,
       successCallbackFn: options.successCallbackFn,
-      replaceOnSuccess: options.replaceOnSuccess,
+      successPosition: defaultPosition,
+      autoRemove: options.autoRemove !== false,
+      autoRemoveDelay: options.autoRemoveDelay || 5000,
+      showIcon: options.showIcon !== false,
       formSelectors: options.formSelector
     } as FormConfiguration
 
@@ -507,21 +542,26 @@ export class NativeForms {
   /**
    * Handle successful submission
    */
-  private handleSuccess(form: HTMLFormElement, response: any): void {
-    console.log('[Mail818 NativeForms] handleSuccess called with config:', this.config)
+  private handleSuccess(form: HTMLFormElement, response: unknown): void {
+    console.log('[Mail818 NativeForms] handleSuccess called with config:',
+      this.config)
 
     // Call custom success callback
-    this.options.onSuccess?.(response)
+    this.options.onSuccess?.(response as Record<string, unknown>)
 
     // Handle success behavior from config
-    if (this.config?.successBehavior === 'redirect' && this.config.successRedirectUrl) {
+    if (this.config?.successBehavior === 'redirect' &&
+        this.config.successRedirectUrl) {
       window.location.href = this.config.successRedirectUrl
       return
     }
 
-    if (this.config?.successBehavior === 'callback' && this.config.successCallbackFn) {
+    if (this.config?.successBehavior === 'callback' &&
+        this.config.successCallbackFn) {
       // Call global function if exists
-      const fn = (window as any)[this.config.successCallbackFn]
+      const fn = (window as unknown as Record<string, unknown>)[
+        this.config.successCallbackFn
+      ]
       if (typeof fn === 'function') {
         fn(response)
       }
@@ -530,10 +570,15 @@ export class NativeForms {
     // Show success message
     const message = this.config?.successMessage || 'Thank you for subscribing!'
 
-    if (this.options.replaceOnSuccess || this.config?.replaceOnSuccess) {
-      this.replaceFormWithMessage(form, message, 'success')
-    } else {
-      this.showFormMessage(form, message, 'success')
+    // Determine position (handle legacy replaceOnSuccess)
+    const position: SuccessPosition = this.config?.successPosition ||
+      this.options.successPosition ||
+      (this.options.replaceOnSuccess ? 'replace' : 'below-form')
+
+    this.showMessage(form, message, 'success', position)
+
+    // Reset form if not replacing
+    if (position !== 'replace') {
       form.reset()
     }
   }
@@ -547,10 +592,10 @@ export class NativeForms {
     // Call custom error callback
     this.options.onError?.(error)
 
-    // Show error message
+    // Show error message - errors always show below-form, never replace
     const message = error.message || 'An error occurred. Please try again.'
     console.log('[Mail818 NativeForms] Showing error message:', message)
-    this.showFormMessage(form, message, 'error')
+    this.showMessage(form, message, 'error', 'below-form')
   }
 
   /**
@@ -583,57 +628,128 @@ export class NativeForms {
   }
 
   /**
-   * Show message on form
+   * Show message based on position configuration
    */
-  private showFormMessage(form: HTMLFormElement, message: string, type: 'success' | 'error'): void {
-    // Remove existing message
-    const existing = form.querySelector('.mail818-form-message')
-    existing?.remove()
+  private showMessage(
+    form: HTMLFormElement,
+    message: string,
+    type: 'success' | 'error',
+    position: SuccessPosition
+  ): void {
+    // Remove any existing messages
+    this.removeExistingMessages(form)
+
+    // Get configuration
+    const showIcon = this.config?.showIcon ?? this.options.showIcon ?? true
+    const autoRemove = this.config?.autoRemove ?? this.options.autoRemove ?? true
+    const autoRemoveDelay = this.config?.autoRemoveDelay ??
+      this.options.autoRemoveDelay ?? 5000
 
     // Create message element
     const messageEl = document.createElement('div')
-    messageEl.className = `mail818-form-message mail818-${type}`
-    messageEl.textContent = message
-    messageEl.style.cssText = `
-      padding: 1rem;
-      margin: 1rem 0;
-      border-radius: 0.25rem;
-      background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
-      color: white;
-      text-align: center;
-    `
+    messageEl.className = `mail818-message mail818-message-${type}`
+    messageEl.setAttribute('role', 'alert')
+    messageEl.setAttribute('aria-live', 'polite')
 
-    // Insert at top of form
-    form.insertBefore(messageEl, form.firstChild)
+    // Build inner HTML
+    const iconHtml = showIcon
+      ? (type === 'success' ? SUCCESS_ICON_SVG : ERROR_ICON_SVG)
+      : ''
+    messageEl.innerHTML = `${iconHtml}<span class="mail818-message-text">${this.escapeHtml(message)}</span>`
 
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      messageEl.remove()
-    }, 5000)
+    // Position the message
+    if (position === 'replace') {
+      // Add special class for replace mode
+      messageEl.classList.add('mail818-message-replaced')
+      form.parentNode?.replaceChild(messageEl, form)
+    } else {
+      this.insertMessage(form, messageEl, position)
+    }
+
+    // Auto-remove if enabled (not for replace mode)
+    if (autoRemove && position !== 'replace' && autoRemoveDelay > 0) {
+      setTimeout(() => {
+        messageEl.classList.add('mail818-message-fade-out')
+        setTimeout(() => {
+          messageEl.remove()
+        }, 300) // Match CSS transition duration
+      }, autoRemoveDelay)
+    }
   }
 
   /**
-   * Replace form with message
+   * Insert message element at the specified position
    */
-  private replaceFormWithMessage(form: HTMLFormElement, message: string, type: 'success' | 'error'): void {
-    const messageEl = document.createElement('div')
-    messageEl.className = `mail818-form-replaced mail818-${type}`
-    messageEl.innerHTML = `
-      <div style="
-        padding: 2rem;
-        text-align: center;
-        background-color: ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: white;
-        border-radius: 0.25rem;
-      ">
-        <div style="font-size: 2rem; margin-bottom: 1rem;">
-          ${type === 'success' ? '✓' : '✗'}
-        </div>
-        <div>${message}</div>
-      </div>
-    `
+  private insertMessage(
+    form: HTMLFormElement,
+    messageEl: HTMLElement,
+    position: SuccessPosition
+  ): void {
+    switch (position) {
+      case 'below-form':
+        // Insert after the form
+        form.parentNode?.insertBefore(messageEl, form.nextSibling)
+        break
 
-    form.parentNode?.replaceChild(messageEl, form)
+      case 'above-form':
+        // Insert before the form
+        form.parentNode?.insertBefore(messageEl, form)
+        break
+
+      case 'below-input': {
+        // Find the email input or last input and insert after it
+        const emailInput = form.querySelector('input[type="email"]')
+        const lastInput = emailInput ||
+          form.querySelector('input:last-of-type, textarea:last-of-type')
+        if (lastInput) {
+          // Insert after the input's parent (in case it's wrapped)
+          const targetParent = lastInput.parentElement
+          if (targetParent && targetParent !== form) {
+            targetParent.parentNode?.insertBefore(
+              messageEl, targetParent.nextSibling
+            )
+          } else {
+            lastInput.parentNode?.insertBefore(messageEl, lastInput.nextSibling)
+          }
+        } else {
+          // Fallback to below-form
+          form.parentNode?.insertBefore(messageEl, form.nextSibling)
+        }
+        break
+      }
+
+      default:
+        // Default to below-form
+        form.parentNode?.insertBefore(messageEl, form.nextSibling)
+    }
+  }
+
+  /**
+   * Remove any existing message elements
+   */
+  private removeExistingMessages(form: HTMLFormElement): void {
+    // Remove messages inside the form
+    form.querySelectorAll('.mail818-message').forEach(el => el.remove())
+
+    // Remove messages near the form (siblings)
+    const parent = form.parentNode
+    if (parent) {
+      parent.querySelectorAll('.mail818-message').forEach(el => el.remove())
+    }
+
+    // Remove any replaced form messages
+    document.querySelectorAll('.mail818-message-replaced').forEach(el => {
+      el.remove()
+    })
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
   }
 
   /**

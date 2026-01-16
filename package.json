@@ -1,6 +1,6 @@
 {
   "name": "@mail818/sdk",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "description": "Mail818 JavaScript SDK for email collection forms",
   "main": "dist/mail818.umd.js",

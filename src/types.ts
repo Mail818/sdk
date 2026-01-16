@@ -104,6 +104,11 @@ export interface Mail818Config {
 }
 
 /**
+ * Success message position options for native forms
+ */
+export type SuccessPosition = 'replace' | 'below-form' | 'above-form' | 'below-input';
+
+/**
  * Native Forms types
  */
 export interface FormConfiguration {
@@ -121,8 +126,17 @@ export interface FormConfiguration {
   offlineEnabled: boolean;
   cacheTimeout: number;
   allowedOrigins: string[];
-  replaceOnSuccess: boolean;
+  /** @deprecated Use successPosition instead */
+  replaceOnSuccess?: boolean;
   showLoadingState: boolean;
+  /** Position of the success message relative to the form */
+  successPosition: SuccessPosition;
+  /** Whether to auto-remove the success message */
+  autoRemove: boolean;
+  /** Delay in ms before auto-removing the message (default 5000) */
+  autoRemoveDelay: number;
+  /** Whether to show an icon in the success message */
+  showIcon: boolean;
 }
 
 export interface FieldMapping {
